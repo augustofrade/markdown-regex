@@ -3,6 +3,7 @@ import { Transpiler } from "./Transpiler";
 
 import readline from "readline";
 import fs from "fs";
+import path from "path";
 
 export default class MarkdownConverter {
     private transpiler?: Transpiler;
@@ -57,5 +58,13 @@ export default class MarkdownConverter {
             this.transpiredLines.forEach(line => console.log(line));
         const fileName = FileVerifier.getFileName(this.sourceFilePath);
         console.log(`\nFinished transpiling ${fileName}`);
+        this.saveToFile();
+    }
+
+    private saveToFile() {
+        const outputAbsolutePath = path.resolve(path.join(__dirname, this.resultFilePath));
+        const content = this.transpiredLines.join("\n")
+        fs.writeFileSync(outputAbsolutePath, content);
+        console.log("HTML results saved to file");
     }
 }

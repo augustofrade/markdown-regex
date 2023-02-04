@@ -57,8 +57,7 @@ export class Transpiler {
     }
 
     private parseLongCode(text: string) {
-        this.closeList();
-        this.closeBlockquote();
+        this.wrapMultiLineValues("-code");
 
         text = text.trim();
         if(!this.isCode)
@@ -77,8 +76,7 @@ export class Transpiler {
     }
 
     private parseBlockquote(text: string) {
-        this.closeLongCode();
-        this.closeList();
+        this.wrapMultiLineValues("-quote");
 
         text = text.substring(1).trim();
         text = this.parseTags(text);
@@ -113,10 +111,13 @@ export class Transpiler {
         })
     }
 
-    public wrapMultiLineValues(): void {
-        this.closeList();
-        this.closeLongCode();
-        this.closeBlockquote();
+    public wrapMultiLineValues(exclude: string = ""): void {
+        if(!exclude.includes("-list"))
+            this.closeList();
+        if(!exclude.includes("-code"))
+            this.closeLongCode();
+        if(!exclude.includes("-quote"))
+            this.closeBlockquote();
     }
 
 
