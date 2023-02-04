@@ -19,7 +19,9 @@ export class Transpiler {
         text = this.convertItalic(text);
         text = this.convertStrike(text);
         text = this.convertShortCode(text);
-        this.transpilationRef.push(text);
+        text = this.convertImage(text);
+        text = this.convertHiperlink(text);
+        this.transpilationRef.push(`<p>${text}</p>`);
         
     }
 
@@ -38,6 +40,25 @@ export class Transpiler {
     private convertShortCode(text: string): string {
         return text.replace(/`.+`/gi, match => `<code>${match.substring(2, match.length - 2)}</code>`);
     }
+
+    private convertHiperlink(text: string): string {
+        return text.replace(/\[[^\[\]]+\]\([^\(\)]+\)/gi, match => {
+            console.log(match);
+            const description = match.substring(1, match.indexOf("]"));
+            const hiperlink = match.substring(match.indexOf("(") + 1, match.indexOf(")"));
+            return `<a href="${hiperlink}" target="_blank">${description}</a>`;
+        })
+    }
+
+    private convertImage(text: string): string {
+        return text.replace(/!\[[^\[\]]+\]\([^\(\)]+\)/gi, match => {
+            const description = match.substring(2, match.indexOf("]"));
+            const imagePath = match.substring(match.indexOf("(") + 1, match.indexOf(")"));
+            return `<img href="${imagePath}" alt="${description}">`;
+        })
+    }
+
+    
 
 
     private verifyEndOfList() {

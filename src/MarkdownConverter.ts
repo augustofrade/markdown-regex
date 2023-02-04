@@ -46,7 +46,7 @@ export default class MarkdownConverter {
     }
 
     private onFinish() {
-        // this.transpiredLines.forEach(line => console.log(line));
+        this.transpiredLines.forEach(line => console.log(line));
         const fileName = FileVerifier.getFileName(this.sourceFilePath);
         console.log(`\nFinished transpiling ${fileName}`);
     }
