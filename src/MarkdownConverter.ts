@@ -6,6 +6,7 @@ import fs from "fs";
 
 export default class MarkdownConverter {
     private transpiler?: Transpiler;
+    private logOnConsole: boolean = false;
 
     private transpiredLines: string[] = [];
     public constructor (
@@ -17,13 +18,18 @@ export default class MarkdownConverter {
 
     }
 
-    public convert() {
+    public convert(): this {
         const sourceFilename = FileVerifier.getFileName(this.sourceFilePath);
         const resultFilename = FileVerifier.getFileName(this.resultFilePath);
         console.log(`Transpilling ${sourceFilename} into ${resultFilename}`);
         this.transpiler = new Transpiler(this.transpiredLines);
-        const success = this.readFile();
+        this.readFile();
+        return this;
 
+    }
+
+    public toConsole(): void {
+        this.logOnConsole = true;
     }
 
     private readFile() {
@@ -46,7 +52,9 @@ export default class MarkdownConverter {
     }
 
     private onFinish() {
-        this.transpiredLines.forEach(line => console.log(line));
+        this.transpiler!.wrapMultiLineValues();
+        if(this.logOnConsole)
+            this.transpiredLines.forEach(line => console.log(line));
         const fileName = FileVerifier.getFileName(this.sourceFilePath);
         console.log(`\nFinished transpiling ${fileName}`);
     }
