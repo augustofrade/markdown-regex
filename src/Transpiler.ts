@@ -2,6 +2,12 @@ export class Transpiler {
     private listLevel: number = 0;
     private isCode: boolean = false;
     private isQuotation: boolean = false;
+    private table: { open: boolean, header: string[], rawHeader: string, body: string[][] } = {
+        open: false,
+        header: [],
+        rawHeader: "",
+        body: []
+    };
 
     constructor(
         private transpilationRef: string[]
@@ -95,6 +101,64 @@ export class Transpiler {
         }
     }
 
+    private parseTable(text: string) {
+        if(this.table.header.length === 0) {
+            this.table.rawHeader = text;
+            const headerRow = this.genTableRow(text);
+            this.table.header.push(...headerRow);
+
+        } else if(this.table.open) {
+            const bodyRow = this.genTableRow(text);
+            this.table.body.push(bodyRow);
+        } else {
+            // Reset table if there's a header already but no divisory line
+            this.closeTable();
+            this.transpilationRef.push("<p>" + this.parseTags(text) + "</p>");
+            this.table.header = [];
+        }
+    }
+
+    private genTableRow(text: string): string[] {
+        let rowCells = text.split("|").map(cell => this.parseTags(cell.trim()));
+        rowCells = rowCells.filter(cell => cell !== "");
+        return rowCells;
+    }
+
+    private parseTableLine(text: string) {
+        this.table.open = true;
+    }
+
+    private closeTable() {
+        if(this.table.header.length > 0 && !this.table.open) {
+            // If only the header was parsed without the divisory line
+            const parsedLine = this.parseTags(this.table.rawHeader);
+            this.transpilationRef.push("<p>" + parsedLine + "</p>");
+
+        } else if((this.table.open && this.table.body.length === 0) || this.table.body.length > 0) {
+            // If found divisory line but no body was found during parsing
+            const tableHeader = this.table.header.map(cell => "\t\t<th>" + cell + "</th>");
+            this.transpilationRef.push("<table>", "\t<tr>", ...tableHeader, "\t</tr>", "</table>");
+
+        }
+        if(this.table.body.length > 0) {
+            // Full table found
+            this.transpilationRef.pop();
+            this.table.body.forEach(row => {
+                this.transpilationRef.push("\t<tr>");
+                row.forEach(cell => {
+                    this.transpilationRef.push("\t\t<td>" + cell + "</td>");
+                });
+                this.transpilationRef.push("\t</tr>");
+            })
+            this.transpilationRef.push("</table>");
+        }
+
+        this.table.open = false;
+        this.table.rawHeader = "";
+        this.table.header = [];
+        this.table.body = [];
+    }
+
     private parseHiperlink(text: string): string {
         return text.replace(/\[[^\[\]]+\]\([^\(\)]+\)/gi, match => {
             const description = match.substring(1, match.indexOf("]"));
@@ -112,6 +176,8 @@ export class Transpiler {
     }
 
     public wrapMultiLineValues(exclude: string = ""): void {
+        if(!exclude.includes("-table"))
+            this.closeTable();
         if(!exclude.includes("-list"))
             this.closeList();
         if(!exclude.includes("-code"))
@@ -136,6 +202,8 @@ export class Transpiler {
             "^>.+": this.parseBlockquote.bind(this),
             "#{1,6}\\s.+": this.parseTitle.bind(this),
             "^(\\s*-\\s).+": this.parseList.bind(this),
+            "\\|?-+\\|-+\\|?": this.parseTableLine.bind(this),
+            ".+\\|.+": this.parseTable.bind(this),
             ".+": this.parseParagraph.bind(this)
         }
     }
