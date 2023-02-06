@@ -9,7 +9,7 @@ export default class MarkdownConverter {
     private transpiler?: Transpiler;
     private logOnConsole: boolean = false;
 
-    private transpiredLines: string[] = [];
+    private resultLines: string[] = [];
     public constructor (
         private sourceFilePath: string,
         private resultFilePath: string
@@ -23,7 +23,7 @@ export default class MarkdownConverter {
         const sourceFilename = FileVerifier.getFileName(this.sourceFilePath);
         const resultFilename = FileVerifier.getFileName(this.resultFilePath);
         console.log(`Transpilling ${sourceFilename} into ${resultFilename}`);
-        this.transpiler = new Transpiler(this.transpiredLines);
+        this.transpiler = new Transpiler();
         this.readFile();
         return this;
 
@@ -54,8 +54,9 @@ export default class MarkdownConverter {
 
     private onFinish() {
         this.transpiler!.wrapMultiLineValues();
+        this.resultLines = this.transpiler!.getParseResult();
         if(this.logOnConsole)
-            this.transpiredLines.forEach(line => console.log(line));
+            this.resultLines.forEach(line => console.log(line));
         const fileName = FileVerifier.getFileName(this.sourceFilePath);
         console.log(`\nFinished transpiling ${fileName}`);
         this.saveToFile();
@@ -63,7 +64,7 @@ export default class MarkdownConverter {
 
     private saveToFile() {
         const outputAbsolutePath = path.resolve(path.join(__dirname, this.resultFilePath));
-        const content = this.transpiredLines.join("\n")
+        const content = this.resultLines.join("\n")
         fs.writeFileSync(outputAbsolutePath, content);
         console.log("HTML results saved to file");
     }
